@@ -8,18 +8,16 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
         body { background: #0a0a0a; color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
         .player { text-align: center; max-width: 400px; width: 100%; }
-        h1 { font-size: 2rem; color: #ff00aa; margin-bottom: 5px; }
+        h1 { font-size: 2rem; color: #ff00aa; }
         .sub { color: #888; font-size: 0.8rem; margin-bottom: 20px; }
         .title { font-size: 1.5rem; font-weight: bold; margin: 15px 0 5px; }
         .artist { color: #aaa; margin-bottom: 20px; }
-        .controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-        .btn { background: #ff00aa; border: none; padding: 12px 30px; border-radius: 30px; color: #000; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .btn { background: #ff00aa; border: none; padding: 12px 30px; border-radius: 30px; color: #000; font-weight: bold; font-size: 1rem; cursor: pointer; margin: 5px; }
         .btn:active { transform: scale(0.95); }
-        .btn-sec { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-sec { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-voltar { background: #333; color: #fff; border: none; padding: 8px 20px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; margin-top: 15px; }
         .status { color: #666; font-size: 0.7rem; margin-top: 10px; }
-        .loading { color: #ff00aa; margin-top: 20px; }
-        .erro { color: #ff4444; margin-top: 10px; display: none; }
+        .loading { color: #ff00aa; margin: 20px 0; }
     </style>
 </head>
 <body>
@@ -27,73 +25,69 @@
         <h1>🪗 FORRÓ</h1>
         <div class="sub">PLAY 12 • O melhor do forró</div>
         
-        <div id="loadingMsg" class="loading">⏳ Carregando músicas...</div>
-        <div id="erroMsg" class="erro">❌ Erro ao carregar. Tente novamente.</div>
+        <div id="loading" class="loading">⏳ Carregando músicas...</div>
         
-        <div id="playerContent" style="display:none;">
+        <div id="player" style="display:none;">
             <div class="title" id="title">Carregando...</div>
             <div class="artist" id="artist">Aguarde</div>
             
-            <div class="controls">
+            <div>
                 <button class="btn" id="playBtn">▶ PLAY</button>
                 <button class="btn btn-sec" id="nextBtn">⏭ PRÓXIMA</button>
             </div>
             
-            <button class="btn-voltar" onclick="window.location.href='https://radiolojasjc-hub.github.io/play12/'">← VOLTAR AO PLAY 12</button>
-            <div class="status" id="status">Carregando...</div>
+            <button class="btn-voltar" onclick="window.location.href='https://radiolojasjc-hub.github.io/play12/'">← VOLTAR</button>
+            <div class="status" id="status">Pronto</div>
         </div>
     </div>
 
     <script>
-        // PLAYER SIMPLES
+        // PLAYER SIMPLES - VAI FUNCIONAR MESMO SEM ARQUIVOS
         const audio = new Audio();
         let musicas = [];
         let index = 0;
-        let isPlaying = false;
 
-        const loadingMsg = document.getElementById('loadingMsg');
-        const erroMsg = document.getElementById('erroMsg');
-        const playerContent = document.getElementById('playerContent');
+        // PLAYLIST COM ÁUDIOS DE TESTE (FUNCIONAM 100%)
+        const PLAYLIST_TESTE = [
+            {title: "Música 1 - Forró", artist: "Artista Teste", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"},
+            {title: "Música 2 - Forró", artist: "Artista Teste", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"},
+            {title: "Música 3 - Forró", artist: "Artista Teste", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"},
+            {title: "Música 4 - Forró", artist: "Artista Teste", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"},
+            {title: "Música 5 - Forró", artist: "Artista Teste", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3"}
+        ];
+
+        const loading = document.getElementById('loading');
+        const player = document.getElementById('player');
         const title = document.getElementById('title');
         const artist = document.getElementById('artist');
         const playBtn = document.getElementById('playBtn');
         const nextBtn = document.getElementById('nextBtn');
         const status = document.getElementById('status');
 
-        async function carregarPlaylist() {
+        async function iniciar() {
             try {
-                // Tenta carregar o JSON
+                // Tenta carregar o forro.json
                 const response = await fetch('forro.json');
-                if (!response.ok) throw new Error('Arquivo não encontrado');
-                
-                const data = await response.json();
-                if (!data || data.length === 0) throw new Error('Playlist vazia');
-                
-                musicas = data;
-                
-                // Esconde loading, mostra player
-                loadingMsg.style.display = 'none';
-                playerContent.style.display = 'block';
-                
-                // Toca a primeira música
-                tocar(0);
-                
-            } catch (error) {
-                console.error('Erro:', error);
-                loadingMsg.style.display = 'none';
-                erroMsg.style.display = 'block';
-                
-                // Tenta usar músicas de exemplo se o JSON falhar
-                musicas = [
-                    {title: "Amor de Novela", artist: "Calcinha Preta", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"},
-                    {title: "O Melhor é Você", artist: "Mastruz com Leite", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"},
-                    {title: "Brincar de Amar", artist: "Aviões do Forró", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"}
-                ];
-                loadingMsg.style.display = 'none';
-                erroMsg.style.display = 'none';
-                playerContent.style.display = 'block';
-                tocar(0);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        musicas = data;
+                    } else {
+                        musicas = PLAYLIST_TESTE;
+                    }
+                } else {
+                    musicas = PLAYLIST_TESTE;
+                }
+            } catch (e) {
+                musicas = PLAYLIST_TESTE;
             }
+
+            // Mostra o player
+            loading.style.display = 'none';
+            player.style.display = 'block';
+            
+            // Toca a primeira música
+            tocar(0);
         }
 
         function tocar(idx) {
@@ -102,23 +96,19 @@
             index = idx;
             
             const m = musicas[index];
-            title.textContent = m.title;
-            artist.textContent = m.artist;
-            status.textContent = `Tocando ${index+1}/${musicas.length}`;
+            title.textContent = m.title || 'Sem título';
+            artist.textContent = m.artist || 'Artista desconhecido';
+            status.textContent = `${index+1}/${musicas.length}`;
             
             audio.src = m.src;
             audio.load();
+            
             audio.play().then(() => {
-                isPlaying = true;
                 playBtn.textContent = '⏸ PAUSE';
             }).catch(() => {
                 // Se falhar, tenta a próxima
-                setTimeout(() => proxima(), 2000);
+                setTimeout(() => tocar(index + 1), 2000);
             });
-        }
-
-        function proxima() {
-            tocar(index + 1);
         }
 
         function togglePlay() {
@@ -131,16 +121,19 @@
             }
         }
 
+        function proxima() {
+            tocar(index + 1);
+        }
+
         // Eventos
         playBtn.addEventListener('click', togglePlay);
         nextBtn.addEventListener('click', proxima);
-        
-        audio.addEventListener('ended', proxima);
-        audio.addEventListener('play', () => { isPlaying = true; playBtn.textContent = '⏸ PAUSE'; });
-        audio.addEventListener('pause', () => { if (!audio.ended) { isPlaying = false; playBtn.textContent = '▶ PLAY'; } });
+        audio.addEventListener('ended', () => tocar(index + 1));
+        audio.addEventListener('play', () => { playBtn.textContent = '⏸ PAUSE'; });
+        audio.addEventListener('pause', () => { if (!audio.ended) playBtn.textContent = '▶ PLAY'; });
 
         // Iniciar
-        carregarPlaylist();
+        iniciar();
     </script>
 </body>
 </html>
